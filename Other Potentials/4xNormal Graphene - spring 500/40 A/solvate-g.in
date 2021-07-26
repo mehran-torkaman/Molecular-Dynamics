@@ -1,7 +1,7 @@
 # Created by charmm2lammps v1.8.3 on ‫جۆمعه آخشامی ۱۹ مارس ۲۰، ساعات ۰۸:۲۰:۲۹ (+0330)‬
 
 echo both 
-boundary	p p p
+boundary		p p p
 
 units           real
 neigh_modify    delay 0 every 1
@@ -16,25 +16,19 @@ group 		Oxygen type 2
 
 set		group Hydrogen charge 0.417
 set		group Oxygen charge -0.834
-group		Fix type 3 4 5
+group 		Fix type 3
 
-pair_style      hybrid tersoff sw lj/charmm/coul/long 8 10 
-pair_coeff      *       *   	tersoff SiC.tersoff-real NULL NULL NULL NULL C
-pair_coeff      *       *   	sw black_phosphorus.sw NULL NULL P2 P1 NULL
-pair_coeff	1	1	lj/charmm/coul/long 0.0461  0.4000135
-pair_coeff	1	2	lj/charmm/coul/long 0.0836  1.77529375
-pair_coeff	1	3	lj/charmm/coul/long 0.1358  1.86500675 # H-Pu
-pair_coeff	1	4	lj/charmm/coul/long 0.1358  1.86500675 # H-Pd
-pair_coeff	1	5	lj/charmm/coul/long 0.0516  1.81470675 # H-C
+pair_style	hybrid tersoff  lj/charmm/coul/long 8 10
+pair_coeff	*	*	tersoff SiC.tersoff-real NULL NULL C
+pair_coeff	1	1	lj/charmm/coul/long 0.0461   0.4000135
 pair_coeff	2	2	lj/charmm/coul/long 0.1521  3.150574
-pair_coeff	2	3	lj/charmm/coul/long 0.2466  3.240287  # O-Pu
-pair_coeff	2	4	lj/charmm/coul/long 0.2466  3.240287  # O-Pd
-pair_coeff	2	5	lj/charmm/coul/long 0.0937  3.19  # O-C
-pair_coeff	3	4	lj/charmm/coul/long 0  0
-pair_coeff	3	5	lj/charmm/coul/long 0  0
-pair_coeff	4	5	lj/charmm/coul/long 0  0
+pair_coeff	1	2	lj/charmm/coul/long 0.083645681  1.77529375
+pair_coeff	1	3	lj/charmm/coul/long 0.051574896  1.81470675
+pair_coeff	2	3	lj/charmm/coul/long 0.0937  3.19
 
-fix		Spring Fix spring/self 500
+
+fix	Spring Fix spring/self 500 # kcal/mol-A^2
+
 
 kspace_style    pppm 1e-4
 
@@ -46,9 +40,12 @@ timestep        1
 
 velocity        all create 300.0 12345678 dist uniform
 
-group 		water type 1 2
-group  		phosphorene type 3 4
-group  		graphen type 5
+group		water type 1 2
+group		graphene type 3
+
+#delete_atoms overlap 1 water graphene mol yes
+
+#minimize        0.001 0.001 1000 10000
 
 fix             1 all nve
 fix             2 water shake 1e-6 500 0 m 1.0 a 1
@@ -62,23 +59,26 @@ dump            2 all atom 2000 solvate.lammpstrj
 write_data all.data
 
 timestep	0.001
-run             5000
+run             2000
 
 unfix 1
 
 fix		FixNVT1 all nvt temp 300 300 100
 
 log log.torkaman
-timestep	0.01
-run		2000
+
 reset_timestep 0
 
 compute		Temp water temp
-compute		Phtemp phosphorene temp
-compute		Ghtemp graphen temp
+compute		Gtemp graphene temp
 compute		PressTot all pressure Temp
-thermo_style	custom step temp c_Temp c_Phtemp c_Ghtemp pe etotal press vol
+thermo_style	custom step temp c_Temp c_Gtemp pe etotal press vol
 
+timestep	0.001
+run		2000
+
+timestep	0.1
+run		2000
 
 thermo 		25000
 timestep	1
@@ -99,12 +99,13 @@ compute  Temp5 water temp/partial 0 1 1
 
 fix_modify FixNVT2 temp Temp5
 
-thermo_style	custom step temp c_Temp c_Temp5 c_Phtemp pe etotal press vol
+
+thermo_style	custom step temp c_Temp c_Gtemp c_Temp5 pe etotal press vol
 
 
 run		1500000 # 1500ps
 
-dump            3 all xyz 2000 solvate-dump.xyz
+dump		3 all xyz 2000 solvate-dump.xyz
 dump		veldump all custom 1000 customdump.txt id mol type vx vy vz x y z
 #################################################################
 #COMPUTE
@@ -114,4 +115,5 @@ compute		myChunk water dipole/chunk cct1
 fix		1aa water ave/time 50000 1 50000 c_myChunk[*] file dipole.out mode vector
 
 
-run		6000000 # 6ns
+run		6000000 # 500ps
+
