@@ -1,0 +1,110 @@
+# Created by charmm2lammps v1.8.3 on ‫جۆمعه آخشامی ۱۹ مارس ۲۰، ساعات ۰۸:۲۰:۲۹ (+0330)‬
+
+echo both 
+boundary	p p p
+
+units           real
+neigh_modify    delay 0 every 1
+
+atom_style      full
+bond_style      harmonic
+angle_style     harmonic
+read_data       water.data
+
+group		Hydrogen type 1
+group 		Oxygen type 2
+
+set		group Hydrogen charge 0.417
+set		group Oxygen charge -0.834
+group		Fix type 3 4
+
+pair_style      hybrid sw lj/charmm/coul/long 8 10 
+pair_coeff      *       *   	sw black_phosphorus.sw NULL NULL P2 P1
+pair_coeff	1	1	lj/charmm/coul/long 0.0461  0.4000135
+pair_coeff	2	2	lj/charmm/coul/long 0.1521  3.150574
+pair_coeff	1	2	lj/charmm/coul/long 0.083645681  1.77529375
+pair_coeff	1	3	lj/charmm/coul/long 0.051574896  1.81470675
+pair_coeff	1	4	lj/charmm/coul/long 0.051574896  1.81470675
+pair_coeff	2	3	lj/charmm/coul/long 0.0937  3.19
+pair_coeff	2	4	lj/charmm/coul/long 0.0937  3.19
+
+fix		Spring Fix spring/self 500
+
+kspace_style    pppm 1e-4
+
+special_bonds   charmm
+thermo          500
+thermo_style    custom step temp ke pe etotal#multi #custom step temp
+timestep        1
+
+
+velocity        all create 300.0 12345678 dist uniform
+
+group 		water type 1 2
+group  		phosphorene type 3 4
+
+
+fix             1 all nve
+fix             2 water shake 1e-6 500 0 m 1.0 a 1
+
+
+dump            1 all dcd 10000 solvate.dcd
+dump_modify     1 unwrap yes 
+
+dump            2 all atom 2000 solvate.lammpstrj
+
+write_data all.data
+
+timestep	0.001
+run             5000
+
+unfix 1
+
+fix		FixNVT1 all nvt temp 300 300 100
+
+log log.torkaman
+timestep	0.01
+run		2000
+reset_timestep 0
+
+compute		Temp water temp
+compute		Phtemp phosphorene temp
+compute		PressTot all pressure Temp
+thermo_style	custom step temp c_Temp c_Phtemp pe etotal press vol
+
+
+thermo 		25000
+timestep	1
+
+run		100000 #100ps
+######################################################################
+# ADD FORCE
+######################################################################
+unfix FixNVT1
+
+group mobile subtract all Fix
+
+fix	AddForce Oxygen addforce 0.0025 0.0 0.0
+
+fix FixNVT2 all nvt temp 300 300 100
+
+compute  Temp5 water temp/partial 0 1 1
+
+fix_modify FixNVT2 temp Temp5
+
+thermo_style	custom step temp c_Temp c_Temp5 c_Phtemp pe etotal press vol
+
+
+run		1500000 # 1500ps
+
+dump            3 all xyz 2000 solvate-dump.xyz
+dump		veldump all custom 1000 customdump.txt id mol type vx vy vz x y z
+#################################################################
+#COMPUTE
+#################################################################
+compute		cct1 water chunk/atom molecule
+compute		myChunk water dipole/chunk cct1
+fix		1aa water ave/time 50000 1 50000 c_myChunk[*] file dipole.out mode vector
+
+
+run		6000000 # 6ns
