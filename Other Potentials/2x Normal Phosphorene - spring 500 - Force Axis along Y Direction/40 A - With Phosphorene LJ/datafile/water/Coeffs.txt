@@ -1,0 +1,9 @@
+Coeffs 
+
+ Bond Coeffs
+
+ 1 450 0.9572  #HT OT
+
+ Angle Coeffs
+
+ 1 55 104.52  #HT OT HT
