@@ -1,0 +1,11 @@
+tolerance 2.0
+filetype pdb
+output mixture.pdb
+
+structure water.pdb 
+  number  10367
+  inside box   5.0  5.0  5.0  50.0   52.0    95.0
+end structure
+
+
+
