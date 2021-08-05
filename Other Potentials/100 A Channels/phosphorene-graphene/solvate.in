@@ -113,5 +113,4 @@ compute		cct1 water chunk/atom molecule
 compute		myChunk water dipole/chunk cct1
 fix		1aa water ave/time 50000 1 50000 c_myChunk[*] file dipole.out mode vector
 
-
 run		6000000 # 6ns

@@ -115,3 +115,4 @@ fix		1aa water ave/time 50000 1 50000 c_myChunk[*] file dipole.out mode vector
 
 
 run		6000000 # 6ns
+

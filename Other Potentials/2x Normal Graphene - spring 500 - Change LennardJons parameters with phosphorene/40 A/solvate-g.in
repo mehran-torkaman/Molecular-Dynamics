@@ -4,7 +4,7 @@ echo both
 boundary		p p p
 
 units           real
-neigh_modify    delay 2 every 1
+neigh_modify    delay 0 every 1
 
 atom_style      full
 bond_style      harmonic
@@ -63,7 +63,7 @@ run             2000
 
 unfix 1
 
-fix		FixNVT1 all nvt temp 300 300 50
+fix		FixNVT1 all nvt temp 300 300 100
 
 log log.torkaman
 
@@ -93,7 +93,7 @@ group mobile subtract all Fix
 
 fix	AddForce Oxygen addforce 0.0025 0.0 0.0
 
-fix FixNVT2 all nvt temp 300 300 50
+fix FixNVT2 all nvt temp 300 300 100
 
 compute  Temp5 water temp/partial 0 1 1
 
@@ -115,5 +115,5 @@ compute		myChunk water dipole/chunk cct1
 fix		1aa water ave/time 50000 1 50000 c_myChunk[*] file dipole.out mode vector
 
 
-run		500000 # 500ps
+run		6000000 # 6ns
 
